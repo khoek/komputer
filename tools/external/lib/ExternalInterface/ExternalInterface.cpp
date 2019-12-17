@@ -15,6 +15,8 @@ static bus_spec PORT[BUSCOUNT];
 #define P_SIN     4
 #define P_OCLK    5
 
+#define do_delay() delayMicroseconds(1)
+
 static inline int port(int bus, int pin) {
   return PORT[bus][pin];
 }
@@ -43,21 +45,21 @@ void ExternalInterfaceType::init(const bus_spec spec[3]) {
 
 void pulse_data_clock(int bus) {
   digitalWrite(port(bus, P_CLK), HIGH);
-  delayMicroseconds(1);
+  do_delay();
   digitalWrite(port(bus, P_CLK), LOW);
-  delayMicroseconds(1);
+  do_delay();
 }
 
 void pulse_out_clock(int bus) {
   digitalWrite(port(bus, P_OCLK), HIGH);
-  delayMicroseconds(1);
+  do_delay();
   digitalWrite(port(bus, P_OCLK), LOW);
-  delayMicroseconds(1);
+  do_delay();
 }
 
 void set_enabled(int bus, int oe) {
   digitalWrite(port(bus, P_N_OE), oe ? LOW : HIGH);
-  delayMicroseconds(1);
+  do_delay();
 }
 
 void set_data(int bus, unsigned short reg) {
@@ -69,38 +71,18 @@ void set_data(int bus, unsigned short reg) {
   pulse_out_clock(bus);
 }
 
-unsigned short get_udata(int bus) {
-  digitalWrite(port(bus, P_N_LATCH), LOW);
-  delayMicroseconds(1);
-  
-  pulse_data_clock(bus);
-  
-  digitalWrite(port(bus, P_N_LATCH), HIGH);
-  delayMicroseconds(1);
-  
-  unsigned int ret = 0;
-  for (int i = 15; i >= 0; i--) {
-    ret |= (digitalRead(port(bus, P_SOUT)) == HIGH) << i;
-    delayMicroseconds(1);
-    pulse_data_clock(bus);
-  }
-  
-  return ret;
-}
-
 unsigned short get_data(int bus) {
   digitalWrite(port(bus, P_N_LATCH), LOW);
-  delayMicroseconds(1);
+  do_delay();
   
   pulse_data_clock(bus);
   
   digitalWrite(port(bus, P_N_LATCH), HIGH);
-  delayMicroseconds(1);
   
   unsigned int ret = 0;
   for (int i = 15; i >= 0; i--) {
+    do_delay();
     ret |= (digitalRead(port(bus, P_SOUT)) == HIGH) << i;
-    delayMicroseconds(1);
     pulse_data_clock(bus);
   }
   

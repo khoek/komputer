@@ -1,9 +1,6 @@
 #include <ExternalInterface.h>
 #include "alu.h"
 
-// WARNING (TODO) FLAG_CHECK_MASK NOT FULLY ENABLED (FLAG_SIGN IS CURRENTLY BROKEN IN HARDWARE)
-// WARNING (TODO) ENABLE XOR
-
 const bus_spec PORTS[] = {{7,8,9,10,11,A4}, {2,3,4,5,6,A5}, {-1,12,-1,13,A0,A3}};
 
 void setup() {
@@ -28,7 +25,7 @@ void setup() {
 #define FLAG_N_ZERO (1 << 1)
 #define FLAG_SIGN   (1 << 2)
 
-#define FLAG_CHECK_MASK (FLAG_CARRY | FLAG_N_ZERO)
+#define FLAG_CHECK_MASK (FLAG_CARRY | FLAG_N_ZERO | FLAG_SIGN)
 
 #define test_flag(flag, val, raw) ((flag & FLAG_CHECK_MASK) ? (raw & flag ? val : "-") : "X")
 
@@ -154,7 +151,7 @@ operation_result eval_test(unsigned short a, unsigned short b) {
 }
 operation test_op = {.nm = "TST", .mode = 0x7, .eval = eval_test};
 
-operation *ops[] = {&add_op, &sub_op, &and_op, &or_op, /*&xor_op,*/ &lsft_op, &rshf_op, &test_op};
+operation *ops[] = {&add_op, &sub_op, &and_op, &or_op, &xor_op, &lsft_op, &rshf_op, &test_op};
 
 unsigned short data[] = {
    0xFFFF, 0xFA0A, 0xF505, 0xAFA0,
