@@ -1,0 +1,80 @@
+Memory module: AND the Write enables with the clock (or NAND, or whatever since WE is negated)
+ALSO NEED AN ADDRESS LATCH
+
+
+
+
+
+Memory module: want higher-level bitmode toggle/hardwired combos so that the low bit of the address bus automatically controls what is going on
+In order to handle this I should really carefully write out all the combos I want
+
+Here is a bit of obvious mutual exclusion: 4 switches connect the hi and lo parts of BUSM to BUSF. We will never want to turn on switches which connect a hi or lo part
+of BUSM to both hi and lo of BUSF, and similarly with BUSF connecting to BUSM. This means that each combo of 4 switches (one for BUSM, one for BUSF) will only ever want
+one switch (of four) on, or one of two possible pairs. If neither BUSB nor BUSM connects to a hi or low part of BUSF, than this exactly means that that respective part
+should have the zero buslines active.
+
+
+Actually, we can delete two switches on the BUSM-BUSF interface, since the four switches connecting BUSB to BUSF can be used to do whatever we want.
+
+
+
+Now by writing out the possible combos I want with these, we can figure out if/what we can hardwire the low address bit to do.
+I want:
+
+* 16 bit direct mode, simple as.
+* 8 bit modes, BUSB LO/HI store at byte address.
+* 8 bit modes, BUSB LO/HI read at byte address.
+
+
+
+
+READ 16:
+
+FIDSTORE_WHOLEBUS(M)
+RECALL_BUSOUT(true, 0, y)
+
+READ 8: BUSB x read at parity(y), zero?
+
+FIDSTORE_HALF(false, zero)
+RECALL_BUSOUT(false, x, y)
+
+STORE 16:
+
+FIDSTORE_WHOLEBUS(B)
+RECALL_MEMSTORE
+
+STORE 8: BUSB x store at parity(y), zero?
+
+FIDSTORE_HALF(true, zero)
+RECALL_MEMSTORE
+
+
+
+
+
+
+FIDSTORE_WHOLEBUS(X)      : MEMORY_READ &   CONNECT_WHOLEBUS(X)       &   FIDDLE STORE
+FIDSTORE_HALF(write,zero) : MEMORY_READ &   CONNECT_HALF(write,zero)  &   FIDDLE STORE
+
+RECALL_MEMSTORE             : FIDDLE RECALL      &      CONNECT_WHOLEBUS(M)      &    MEMORY STORE
+RECALL_BUSOUT(noflip=true , x, y) : FIDDLE RECALL     &      CONNECT_WHOLEBUS(B)
+RECALL_BUSOUT(noflip=false, x, y) : FIDDLE RECALL     &      CONNECT_WHOLEBUS_BFLIP((x = y))
+
+
+
+CONNECT_WHOLEBUS(X)      : BUSF LO+HI = BUS(X) LO+HI
+CONNECT_HALF(write,zero) : BUSF (y xor write) = BUSM (y xor write)  & BUSF not(y xor write) = if zero then (ZERO) else (BUSB not(x))
+CONNECT_WHOLEBUS_BFLIP(noflip) : if noflip then CONNECT_WHOLEBUS(B) else BUSF, BUSB (flip HI and LO during connection)
+
+
+
+
+ACTUALLY, just use the ALU for zero: CONNECT_HALF(write) : BUSF (y xor write) = BUSM (y xor write) & BUSF not(y xor write) = BUSB not(x)
+
+
+
+
+
+
+
+Control Board!
